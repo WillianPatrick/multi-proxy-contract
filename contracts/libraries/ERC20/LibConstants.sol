@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 error NotTokenAdmin();
 
-library LibConstants {
+library LibERC20Constants {
     bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("erc20.constants");
 
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);

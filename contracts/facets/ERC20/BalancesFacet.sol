@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { LibBalances } from "../libraries/LibBalances.sol";
+import { LibBalances } from "../../libraries/ERC20/LibBalances.sol";
 
 contract BalancesFacet {
 
