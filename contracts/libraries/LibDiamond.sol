@@ -21,12 +21,36 @@ error CannotReplaceFunctionThatDoesNotExists(bytes4 _selector);
 error RemoveFacetAddressMustBeZeroAddress(address _facetAddress);
 error CannotRemoveFunctionThatDoesNotExist(bytes4 _selector);
 error CannotRemoveImmutableFunction(bytes4 _selector);
-error InitializationFunctionReverted(bytes32 storageKey, address _initializationContractAddress, bytes _calldata);
+error InitializationFunctionReverted(address _initializationContractAddress, bytes _calldata);
+error NotTokenAdmin(address currentAdminAddress);
 
 library LibDiamond {
     bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.diamond.storage");
     event OwnershipTransferred(address previousOwner, address _newOwner);
-    
+    event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
+
+    function enforceIsTokenAdmin() internal view {
+        if(msg.sender != diamondStorage(DIAMOND_STORAGE_POSITION).admin) {
+            revert NotTokenAdmin(diamondStorage(DIAMOND_STORAGE_POSITION).admin);
+        }        
+    }
+
+    function enforceIsTokenAdmin(bytes32 storageKey) internal view {
+        if(msg.sender != diamondStorage(storageKey).admin) {
+            revert NotTokenAdmin(diamondStorage(storageKey).admin);
+        }        
+    }
+
+    function setAdmin(address _newAdmin, bytes32 storageKey) internal {
+        address previousAdmin = diamondStorage(storageKey).admin;
+        diamondStorage(storageKey).admin = _newAdmin;
+        emit AdminshipTransferred(previousAdmin, _newAdmin);
+    }
+
+    function setAdmin(address _newAdmin) internal {
+        setAdmin(_newAdmin, DIAMOND_STORAGE_POSITION);
+    }    
+
     struct FacetAddressAndSelectorPosition {
         address facetAddress;
         uint16 selectorPosition;
@@ -35,7 +59,10 @@ library LibDiamond {
     struct DiamondStorage {
         mapping(bytes4 => FacetAddressAndSelectorPosition) facetAddressAndSelectorPosition;
         bytes4[] selectors;
+        mapping(address => bool) pausedFacets;
+        mapping(bytes4 => bool) pausedSelectors;
         address contractOwner;
+        address admin;
     }
 
     function diamondStorage() internal pure returns (DiamondStorage storage ds) {
@@ -71,8 +98,16 @@ library LibDiamond {
         contractOwner_ = diamondStorage(DIAMOND_STORAGE_POSITION).contractOwner;
     }   
 
+    function contractAdmin(bytes32 storageKey) internal view returns (address contractAdmin_) {
+        contractAdmin_ = diamondStorage(storageKey).admin;
+    }   
+
+    function contractAdmin() internal view returns (address contractAdmin_) {
+        contractAdmin_ = diamondStorage(DIAMOND_STORAGE_POSITION).admin;
+    }   
+
     function enforceIsContractOwner(bytes32 storageKey) internal view {
-        if(msg.sender != diamondStorage(storageKey).contractOwner) {
+        if(msg.sender != diamondStorage(storageKey).contractOwner && msg.sender != diamondStorage(storageKey).admin) {
             revert NotContractOwner(msg.sender, diamondStorage(storageKey).contractOwner);
         }        
     }
@@ -202,7 +237,7 @@ library LibDiamond {
                     revert(add(32, error), returndata_size)
                 }
             } else {
-                revert InitializationFunctionReverted(DIAMOND_STORAGE_POSITION, _init, _calldata);
+                revert InitializationFunctionReverted(_init, _calldata);
             }
         }        
     }
