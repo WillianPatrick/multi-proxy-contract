@@ -13,7 +13,7 @@ struct DiamondArgs {
     //bytes32 storageKey; // Added this for dynamic storage    
 }
 
-contract Diamond {    
+contract Diamond{    
     bool public pausedDiamond;
     bool public removedDiamond;
     uint256 public version;
@@ -42,6 +42,12 @@ contract Diamond {
         // get diamond storage
         assembly {
             ds.slot := position
+        }
+
+        bytes4 functionSelector = msg.sig;
+
+        if (ds.functionRoles[functionSelector] != bytes32(0)) {
+            require(ds.accessControl[functionSelector][msg.sender], "AccessControl: sender does not have access to this function");
         }
         address facet = ds.facetAddressAndSelectorPosition[msg.sig].facetAddress;
         if(facet == address(0)) {

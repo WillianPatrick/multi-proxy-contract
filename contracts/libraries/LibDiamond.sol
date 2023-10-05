@@ -63,6 +63,9 @@ library LibDiamond {
         mapping(bytes4 => bool) pausedSelectors;
         address contractOwner;
         address admin;
+        mapping(bytes32 => mapping(address => bool)) accessControl;
+        mapping(bytes32 => bytes32) roleAdmins; 
+        mapping(bytes4 => bytes32) functionRoles;
     }
 
     function diamondStorage() internal pure returns (DiamondStorage storage ds) {

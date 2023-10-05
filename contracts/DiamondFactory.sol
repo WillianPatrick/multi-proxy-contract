@@ -7,6 +7,7 @@ import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
 import { DiamondCutFacet } from "./facets/DiamondCutFacet.sol";
 import { DiamondLoupeFacet } from "./facets/DiamondLoupeFacet.sol";
 import { OwnershipFacet } from "./facets/OwnershipFacet.sol";
+import { AdminFacet, AccessControlFacet } from "./facets/AdminFacet.sol";
 
 contract DiamondFactory {
 
@@ -16,6 +17,7 @@ contract DiamondFactory {
     DiamondCutFacet public diamondCutFacet;
     DiamondLoupeFacet public diamondLoupeFacet;
     OwnershipFacet public ownershipFacet;
+    AdminFacet public adminFacet;
 
     modifier onlyOwner() {
         require(msg.sender == _owner, "Not contract owner");
@@ -28,13 +30,14 @@ contract DiamondFactory {
         diamondCutFacet = new DiamondCutFacet();
         diamondLoupeFacet = new DiamondLoupeFacet();
         ownershipFacet = new OwnershipFacet();
+        adminFacet = new AdminFacet();
     }
 
     function createDiamond(DiamondArgs memory _args) public onlyOwner returns (address) {
         _args.owner = _args.owner == address(0) ? msg.sender : _args.owner;
         
         // 2. Configure the Diamond with the basic functionalities of the facets
-        IDiamondCut.FacetCut[] memory facetCuts = new IDiamondCut.FacetCut[](3);
+        IDiamondCut.FacetCut[] memory facetCuts = new IDiamondCut.FacetCut[](5);
 
         // DiamondCutFacet selectors
         bytes4[] memory diamondCutSelectors = new bytes4[](1);
@@ -66,6 +69,32 @@ contract DiamondFactory {
             action: IDiamond.FacetCutAction.Add,
             functionSelectors: ownershipSelectors
         });
+
+        // AdminFacet selectors
+        bytes4[] memory adminSelectors = new bytes4[](4);
+        adminSelectors[0] = AdminFacet.grantRole.selector;
+        adminSelectors[1] = AdminFacet.revokeRole.selector;
+        adminSelectors[2] = AdminFacet.renounceRole.selector;
+        adminSelectors[3] = AdminFacet.setRoleAdmin.selector;
+        facetCuts[3] = IDiamond.FacetCut({
+            facetAddress: address(adminFacet),
+            action: IDiamond.FacetCutAction.Add,
+            functionSelectors: adminSelectors
+        });
+
+        // AccessControlFacet selectors
+        bytes4[] memory accessControlSelectors = new bytes4[](5);  // Updated size to 5
+        accessControlSelectors[0] = AccessControlFacet.hasRole.selector;
+        accessControlSelectors[1] = AccessControlFacet.getRoleAdmin.selector;
+        accessControlSelectors[2] = AccessControlFacet.setFunctionRole.selector;
+        accessControlSelectors[3] = AccessControlFacet.removeFunctionRole.selector; // Added selector
+        facetCuts[4] = IDiamond.FacetCut({
+            facetAddress: address(adminFacet),
+            action: IDiamond.FacetCutAction.Add,
+            functionSelectors: accessControlSelectors
+        });
+
+
 
         // 3. Register the functionalities in the newly created Diamond
         Diamond diamond = new Diamond(facetCuts, _args);
