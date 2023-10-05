@@ -22,13 +22,11 @@ contract DiamondFactory {
         // 2. Configure the Diamond with the basic functionalities of the facets
         IDiamondCut.FacetCut[] memory facetCuts = new IDiamondCut.FacetCut[](3);
 
-        // DiamondCutFacet selectors
+  // DiamondCutFacet selectors
         facetCuts[0] = IDiamondCut.FacetCut({
             facetAddress: address(diamondCutFacet),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: new bytes4[](1) {
-                IDiamondCut.diamondCut.selector
-            }
+            functionSelectors: new bytes4[](1) { IDiamondCut.diamondCut.selector }
         });
 
         // DiamondLoupeFacet selectors
