@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.10;
 
 import { Diamond, DiamondArgs } from "./Diamond.sol";
 import { IDiamond } from "./interfaces/IDiamond.sol";
@@ -11,18 +11,29 @@ import { OwnershipFacet } from "./facets/OwnershipFacet.sol";
 contract DiamondFactory {
 
     event DiamondCreated(address indexed diamondAddress, address indexed owner);
-
+    address private _owner;
     address[] public diamonds;
+    DiamondCutFacet public diamondCutFacet;
+    DiamondLoupeFacet public diamondLoupeFacet;
+    OwnershipFacet public ownershipFacet;
 
-    function createDiamond(DiamondArgs memory _args) public returns (address) {
+    modifier onlyOwner() {
+        require(msg.sender == _owner, "Not contract owner");
+        _;
+    }
 
-        _args.owner = _args.owner == address(0) ? msg.sender : _args.owner;
+    constructor() {
+        _owner = msg.sender;
         // 1. Create each facet dynamically
-        DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
-        DiamondLoupeFacet diamondLoupeFacet = new DiamondLoupeFacet();
-        OwnershipFacet ownershipFacet = new OwnershipFacet();
+        diamondCutFacet = new DiamondCutFacet();
+        diamondLoupeFacet = new DiamondLoupeFacet();
+        ownershipFacet = new OwnershipFacet();
+    }
 
-         // 2. Configure the Diamond with the basic functionalities of the facets
+    function createDiamond(DiamondArgs memory _args) public onlyOwner returns (address) {
+        _args.owner = _args.owner == address(0) ? msg.sender : _args.owner;
+        
+        // 2. Configure the Diamond with the basic functionalities of the facets
         IDiamondCut.FacetCut[] memory facetCuts = new IDiamondCut.FacetCut[](3);
 
         // DiamondCutFacet selectors
