@@ -5,7 +5,7 @@ import * as mocha from "mocha-steps";
 import { parseEther } from '@ethersproject/units';
 import { DiamondInit, DiamondCutFacet, DiamondLoupeFacet,
      OwnershipFacet, ERC20ConstantsFacet, ERC20Facet, BalancesFacet,
-     AllowancesFacet, SupplyRegulatorFacet } from '../typechain-types';
+     AllowancesFacet, SupplyRegulatorFacet, AdminFacet } from '../typechain-types';
 import { assert } from 'chai';
 import { getSelectors } from "../scripts/libraries/diamond";
 
@@ -18,6 +18,7 @@ describe("Diamond Global Test", async () => {
     let balancesFacet: BalancesFacet;
     let allowancesFacet: AllowancesFacet;
     let supplyRegulatorFacet: SupplyRegulatorFacet;
+    let adminFacet: AdminFacet;
 
     interface FacetCut {
         facetAddress: string,
@@ -146,190 +147,189 @@ describe("Diamond Global Test", async () => {
 
     // ERC20:
 
-    mocha.step("Deploy the contract that initializes variable values for the functions name(), symbol(), etc. during the diamondCut function call", async function() {
-        const DiamondInit = await ethers.getContractFactory('DiamondInit');
-        diamondInit = await DiamondInit.deploy();
-        await diamondInit.deployed();
-    });
+    // mocha.step("Deploy the contract that initializes variable values for the functions name(), symbol(), etc. during the diamondCut function call", async function() {
+    //     const DiamondInit = await ethers.getContractFactory('DiamondInit');
+    //     diamondInit = await DiamondInit.deploy();
+    //     await diamondInit.deployed();
+    // });
 
-    mocha.step("Forming calldata that will be called from Diamond via delegatecall to initialize variables during the diamondCut function call", async function () {
-        calldataAfterDeploy = diamondInit.interface.encodeFunctionData('initERC20', [
-            name,
-            symbol,
-            decimals,
-            admin.address,
-            totalSupply
-        ]);
-        console.log("       > Token: "+ name + " - Symbol: "+ symbol + " - Decimals: "+ decimals + " - Total Suply: "+ totalSupply + " - Admin: "+ admin.address);
-    });
+    // mocha.step("Forming calldata that will be called from Diamond via delegatecall to initialize variables during the diamondCut function call", async function () {
+    //     calldataAfterDeploy = diamondInit.interface.encodeFunctionData('initERC20', [
+    //         name,
+    //         symbol,
+    //         decimals,
+    //         admin.address,
+    //         totalSupply
+    //     ]);
+    //     console.log("       > Token: "+ name + " - Symbol: "+ symbol + " - Decimals: "+ decimals + " - Total Suply: "+ totalSupply + " - Admin: "+ admin.address);
+    // });
 
-    mocha.step("Deploy implementation with constants", async function () {
-        const ConstantsFacet = await ethers.getContractFactory("ERC20ConstantsFacet");
-        const constantsFacet = await ConstantsFacet.deploy();
-        constantsFacet.deployed();
-        const facetCuts = [{
-            facetAddress: constantsFacet.address,
+    // mocha.step("Deploy implementation with constants", async function () {
+    //     const ConstantsFacet = await ethers.getContractFactory("ERC20ConstantsFacet");
+    //     const constantsFacet = await ConstantsFacet.deploy();
+    //     constantsFacet.deployed();
+    //     const facetCuts = [{
+    //         facetAddress: constantsFacet.address,
+    //         action: FacetCutAction.Add,
+    //         functionSelectors: getSelectors(constantsFacet)
+    //     }];
+    //     await diamondCutFacet.connect(owner).diamondCut(facetCuts, diamondInit.address, calldataAfterDeploy);
+    //     facetToAddressImplementation['ERC20ConstantsFacet'] = constantsFacet.address;
+    // });
+
+    // mocha.step("Initialization of the implementation with constants", async function () {
+    //     constantsFacet = await ethers.getContractAt('ERC20ConstantsFacet', addressDiamond);
+    // });
+
+    // mocha.step("Checking for the presence of constants", async function () {
+    //     assert.equal(await constantsFacet.name(), name);
+    //     assert.equal(await constantsFacet.symbol(), symbol);
+    //     assert.equal(await constantsFacet.decimals(), decimals);
+    //     assert.equal(await constantsFacet.admin(), admin.address);
+    // });
+
+    // mocha.step("Deploying implementation with a transfer function", async function () {
+    //     const BalancesFacet = await ethers.getContractFactory("BalancesFacet");
+    //     const balancesFacet = await BalancesFacet.deploy();
+    //     balancesFacet.deployed();
+    //     const facetCuts = [{
+    //         facetAddress: balancesFacet.address,
+    //         action: FacetCutAction.Add,
+    //         functionSelectors: getSelectors(balancesFacet)
+    //     }];
+    //     await diamondCutFacet.connect(owner).diamondCut(facetCuts, ethers.constants.AddressZero, "0x00");
+    //     facetToAddressImplementation['BalancesFacet'] = balancesFacet.address;
+    // });
+
+    // mocha.step("Initialization of the implementation with balances and transfer", async function () {
+    //     balancesFacet = await ethers.getContractAt('BalancesFacet', addressDiamond);
+    // });
+
+    // mocha.step("Checking the view function of the implementation with balances and transfer", async function () {
+    //     expect(await balancesFacet.totalSupply()).to.be.equal(totalSupply);
+    //     expect(await balancesFacet.balanceOf(admin.address)).to.be.equal(totalSupply);
+    // });
+
+    // mocha.step("Checking the transfer", async function () {
+    //     await balancesFacet.connect(admin).transfer(user1.address, transferAmount);
+    //     expect(await balancesFacet.balanceOf(admin.address)).to.be.equal(totalSupply.sub(transferAmount));
+    //     expect(await balancesFacet.balanceOf(user1.address)).to.be.equal(transferAmount);
+    //     await balancesFacet.connect(user1).transfer(admin.address, transferAmount);
+    // });
+
+    // mocha.step("Deploying the implementation with allowances", async function () {
+    //     const AllowancesFacet = await ethers.getContractFactory("AllowancesFacet");
+    //     const allowancesFacet = await AllowancesFacet.deploy();
+    //     allowancesFacet.deployed();
+    //     const facetCuts = [{
+    //         facetAddress: allowancesFacet.address,
+    //         action: FacetCutAction.Add,
+    //         functionSelectors: getSelectors(allowancesFacet)
+    //     }];
+    //     await diamondCutFacet.connect(owner).diamondCut(facetCuts, ethers.constants.AddressZero, "0x00");
+    //     facetToAddressImplementation['ERC20ConstantsFacet'] = allowancesFacet.address;
+    // });
+
+    // mocha.step("Initialization of the implementation with balances and transfer allowance, approve, transferFrom...", async function () {
+    //     allowancesFacet = await ethers.getContractAt('AllowancesFacet', addressDiamond);
+    // });
+
+    // mocha.step("Testing the functions allowance, approve, transferFrom", async function () {
+    //     expect(await allowancesFacet.allowance(admin.address, user1.address)).to.equal(0);
+    //     const valueForApprove = parseEther("100");
+    //     const valueForTransfer = parseEther("30");
+    //     await allowancesFacet.connect(admin).approve(user1.address, valueForApprove);
+    //     expect(await allowancesFacet.allowance(admin.address, user1.address)).to.equal(valueForApprove);
+    //     await allowancesFacet.connect(user1).transferFrom(admin.address, user2.address, valueForTransfer);
+    //     expect(await balancesFacet.balanceOf(user2.address)).to.equal(valueForTransfer);
+    //     expect(await balancesFacet.balanceOf(admin.address)).to.equal(totalSupply.sub(valueForTransfer));
+    //     expect(await allowancesFacet.allowance(admin.address, user1.address)).to.equal(valueForApprove.sub(valueForTransfer));
+    // });
+
+    // mocha.step("Deploying the implementation with mint and burn", async function () {
+    //     const SupplyRegulatorFacet = await ethers.getContractFactory("SupplyRegulatorFacet");
+    //     supplyRegulatorFacet = await SupplyRegulatorFacet.deploy();
+    //     supplyRegulatorFacet.deployed();
+    //     const facetCuts = [{
+    //         facetAddress: supplyRegulatorFacet.address,
+    //         action: FacetCutAction.Add,
+    //         functionSelectors: getSelectors(supplyRegulatorFacet)
+    //     }];
+    //     await diamondCutFacet.connect(owner).diamondCut(facetCuts, ethers.constants.AddressZero, "0x00");
+    //     facetToAddressImplementation['SupplyRegulatorFacet'] = supplyRegulatorFacet.address;
+    // });
+
+    // mocha.step("Initialization of the implementation with mint and burn functions", async function () {
+    //     supplyRegulatorFacet = await ethers.getContractAt('SupplyRegulatorFacet', addressDiamond);
+    // });
+    
+    // mocha.step("Checking the mint and burn functions", async function () {
+    //     const mintAmount = parseEther('1000');
+    //     const burnAmount = parseEther('500');
+    //     await supplyRegulatorFacet.connect(admin).mint(user3.address, mintAmount);
+    //     expect(await balancesFacet.balanceOf(user3.address)).to.equal(mintAmount);
+    //     expect(await balancesFacet.totalSupply()).to.be.equal(totalSupply.add(mintAmount));
+    //     await supplyRegulatorFacet.connect(admin).burn(user3.address, burnAmount);
+    //     expect(await balancesFacet.balanceOf(user3.address)).to.equal(mintAmount.sub(burnAmount));
+    //     expect(await balancesFacet.totalSupply()).to.be.equal(totalSupply.add(mintAmount).sub(burnAmount));
+    // });
+
+    mocha.step("Deploy the AdminFacet contract", async function() {
+        const AdminFacetFactory = await ethers.getContractFactory("AdminFacet");
+        adminFacet = await AdminFacetFactory.deploy();
+        await adminFacet.deployed();
+        facetToAddressImplementation['AdminFacet'] = adminFacet.address;
+        console.log("       > AdminFacet - " + adminFacet.address);
+    });
+    
+    mocha.step("Extract and Register AdminFacet's public and external functions", async function() {
+        if (!adminFacet) throw new Error("AdminFacet not initialized");
+        const facetCutForAdmin = [{
+            facetAddress: adminFacet.address,
             action: FacetCutAction.Add,
-            functionSelectors: getSelectors(constantsFacet)
+            functionSelectors: getSelectors(adminFacet)
         }];
-        await diamondCutFacet.connect(owner).diamondCut(facetCuts, diamondInit.address, calldataAfterDeploy);
-        facetToAddressImplementation['ERC20ConstantsFacet'] = constantsFacet.address;
+        console.log(facetCutForAdmin);
+
+        await diamondCutFacet.connect(owner).diamondCut(facetCutForAdmin, ethers.constants.AddressZero, "0x00");
+        console.log("       > Registered AdminFacet functions");
     });
 
-    mocha.step("Initialization of the implementation with constants", async function () {
-        constantsFacet = await ethers.getContractAt('ERC20ConstantsFacet', addressDiamond);
-    });
 
-    mocha.step("Checking for the presence of constants", async function () {
-        assert.equal(await constantsFacet.name(), name);
-        assert.equal(await constantsFacet.symbol(), symbol);
-        assert.equal(await constantsFacet.decimals(), decimals);
-        assert.equal(await constantsFacet.admin(), admin.address);
-    });
+    mocha.step("Testing AdminFacet's functionalities", async function() {
+        const DEFAULT_ADMIN_ROLE = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('DEFAULT_ADMIN_ROLE'));
+        const dummyRole = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('DUMMY_ROLE'));
 
-    mocha.step("Deploying implementation with a transfer function", async function () {
-        const BalancesFacet = await ethers.getContractFactory("BalancesFacet");
-        const balancesFacet = await BalancesFacet.deploy();
-        balancesFacet.deployed();
-        const facetCuts = [{
-            facetAddress: balancesFacet.address,
-            action: FacetCutAction.Add,
-            functionSelectors: getSelectors(balancesFacet)
-        }];
-        await diamondCutFacet.connect(owner).diamondCut(facetCuts, ethers.constants.AddressZero, "0x00");
-        facetToAddressImplementation['BalancesFacet'] = balancesFacet.address;
-    });
+        adminFacet = await ethers.getContractAt('AdminFacet', addressDiamond);
+        // Grant the DEFAULT_ADMIN_ROLE to the owner
+        await adminFacet.connect(owner).grantRole(DEFAULT_ADMIN_ROLE, addressDiamond);
+        await adminFacet.connect(owner).grantRole(DEFAULT_ADMIN_ROLE, owner.address);
 
-    mocha.step("Initialization of the implementation with balances and transfer", async function () {
-        balancesFacet = await ethers.getContractAt('BalancesFacet', addressDiamond);
-    });
-
-    mocha.step("Checking the view function of the implementation with balances and transfer", async function () {
-        expect(await balancesFacet.totalSupply()).to.be.equal(totalSupply);
-        expect(await balancesFacet.balanceOf(admin.address)).to.be.equal(totalSupply);
-    });
-
-    mocha.step("Checking the transfer", async function () {
-        await balancesFacet.connect(admin).transfer(user1.address, transferAmount);
-        expect(await balancesFacet.balanceOf(admin.address)).to.be.equal(totalSupply.sub(transferAmount));
-        expect(await balancesFacet.balanceOf(user1.address)).to.be.equal(transferAmount);
-        await balancesFacet.connect(user1).transfer(admin.address, transferAmount);
-    });
-
-    mocha.step("Deploying the implementation with allowances", async function () {
-        const AllowancesFacet = await ethers.getContractFactory("AllowancesFacet");
-        const allowancesFacet = await AllowancesFacet.deploy();
-        allowancesFacet.deployed();
-        const facetCuts = [{
-            facetAddress: allowancesFacet.address,
-            action: FacetCutAction.Add,
-            functionSelectors: getSelectors(allowancesFacet)
-        }];
-        await diamondCutFacet.connect(owner).diamondCut(facetCuts, ethers.constants.AddressZero, "0x00");
-        facetToAddressImplementation['ERC20ConstantsFacet'] = allowancesFacet.address;
-    });
-
-    mocha.step("Initialization of the implementation with balances and transfer allowance, approve, transferFrom...", async function () {
-        allowancesFacet = await ethers.getContractAt('AllowancesFacet', addressDiamond);
-    });
-
-    mocha.step("Testing the functions allowance, approve, transferFrom", async function () {
-        expect(await allowancesFacet.allowance(admin.address, user1.address)).to.equal(0);
-        const valueForApprove = parseEther("100");
-        const valueForTransfer = parseEther("30");
-        await allowancesFacet.connect(admin).approve(user1.address, valueForApprove);
-        expect(await allowancesFacet.allowance(admin.address, user1.address)).to.equal(valueForApprove);
-        await allowancesFacet.connect(user1).transferFrom(admin.address, user2.address, valueForTransfer);
-        expect(await balancesFacet.balanceOf(user2.address)).to.equal(valueForTransfer);
-        expect(await balancesFacet.balanceOf(admin.address)).to.equal(totalSupply.sub(valueForTransfer));
-        expect(await allowancesFacet.allowance(admin.address, user1.address)).to.equal(valueForApprove.sub(valueForTransfer));
-    });
-
-    mocha.step("Deploying the implementation with mint and burn", async function () {
-        const SupplyRegulatorFacet = await ethers.getContractFactory("SupplyRegulatorFacet");
-        supplyRegulatorFacet = await SupplyRegulatorFacet.deploy();
-        supplyRegulatorFacet.deployed();
-        const facetCuts = [{
-            facetAddress: supplyRegulatorFacet.address,
-            action: FacetCutAction.Add,
-            functionSelectors: getSelectors(supplyRegulatorFacet)
-        }];
-        await diamondCutFacet.connect(owner).diamondCut(facetCuts, ethers.constants.AddressZero, "0x00");
-        facetToAddressImplementation['SupplyRegulatorFacet'] = supplyRegulatorFacet.address;
-    });
-
-    mocha.step("Initialization of the implementation with mint and burn functions", async function () {
-        supplyRegulatorFacet = await ethers.getContractAt('SupplyRegulatorFacet', addressDiamond);
-    });
+        // Now, the owner can set the admin role for the dummyRole
+        await adminFacet.connect(owner).setRoleAdmin(dummyRole, DEFAULT_ADMIN_ROLE);
     
-    mocha.step("Checking the mint and burn functions", async function () {
-        const mintAmount = parseEther('1000');
-        const burnAmount = parseEther('500');
-        await supplyRegulatorFacet.connect(admin).mint(user3.address, mintAmount);
-        expect(await balancesFacet.balanceOf(user3.address)).to.equal(mintAmount);
-        expect(await balancesFacet.totalSupply()).to.be.equal(totalSupply.add(mintAmount));
-        await supplyRegulatorFacet.connect(admin).burn(user3.address, burnAmount);
-        expect(await balancesFacet.balanceOf(user3.address)).to.equal(mintAmount.sub(burnAmount));
-        expect(await balancesFacet.totalSupply()).to.be.equal(totalSupply.add(mintAmount).sub(burnAmount));
-    });
+        // Now the owner can grant the dummyRole to user1
+        await adminFacet.connect(owner).grantRole(dummyRole, user1.address);
+        expect(await adminFacet.hasRole(dummyRole, user1.address)).to.be.true;
 
-    totalSupply = parseEther('2500000');
-    transferAmount = parseEther('1000');
-    name = "Token Name 2";
-    symbol = "SYMBOL2";
-    decimals = 18;
-
-    mocha.step("Deploy the ERC20Facet contract", async function() {
-        const ERC20FacetFactory = await ethers.getContractFactory("ERC20Facet");
-        erc20Facet = await ERC20FacetFactory.deploy(name, symbol, totalSupply, decimals);
-        await erc20Facet.deployed();
-        facetToAddressImplementation['ERC20Facet'] = erc20Facet.address;
-        console.log("       > ERC20Facet - " + erc20Facet.address);
-    });
-    
-    mocha.step("Extract and Register ERC20Facet's public and external functions", async function() {
-        if (!erc20Facet) throw new Error("ERC20Facet not initialized");
-        const facetCutForERC20 = [{
-            facetAddress: erc20Facet.address,
-            action: FacetCutAction.Add,
-            functionSelectors: getSelectors(erc20Facet)
-        }];
-        console.log(facetCutForERC20);
-
-        await diamondCutFacet.connect(owner).diamondCut(facetCutForERC20, ethers.constants.AddressZero, "0x00");
-        console.log("       > Registered ERC20Facet functions");
-    });
-
-    mocha.step("Testing ERC20Facet's functionalities", async function() {
-
-        erc20Facet = await ethers.getContractAt('ERC20Facet', addressDiamond);
-        // Testing balance
-        expect(await erc20Facet.balanceOf(admin.address)).to.be.equal(totalSupply);
-        //expect(await erc20Facet.balanceOf(admin.address)).to.be.equal(parseEther('totalSupply'));
-    
-        // Testing transfer functionality
-        await erc20Facet.connect(admin).transfer(user1.address, transferAmount);
-        expect(await erc20Facet.balanceOf(admin.address)).to.equal(totalSupply.sub(transferAmount));
-        expect(await erc20Facet.balanceOf(user1.address)).to.equal(transferAmount);
-    
-        // Testing approve and allowance
-        const approveAmount = parseEther('500');
-        await erc20Facet.connect(user1).approve(user2.address, approveAmount);
-        expect(await erc20Facet.allowance(user1.address, user2.address)).to.equal(approveAmount);
-    
-        // Testing transferFrom
-        await erc20Facet.connect(user2).transferFrom(user1.address, user2.address, approveAmount);
-        expect(await erc20Facet.balanceOf(user1.address)).to.equal(transferAmount.sub(approveAmount));
-        expect(await erc20Facet.balanceOf(user2.address)).to.equal(approveAmount);
-    
-        // Testing pause functionality
-        await erc20Facet.pause();
-        await expect(erc20Facet.connect(user1).transfer(user2.address, parseEther('100'))).to.be.revertedWith("ERC20Pausable: token transfer while paused");
+        await adminFacet.connect(owner).grantRole(dummyRole, user2.address);
+        expect(await adminFacet.hasRole(dummyRole, user2.address)).to.be.true;
         
-        // Testing unpause functionality
-        await erc20Facet.unpause();
-        await erc20Facet.connect(user1).transfer(user2.address, parseEther('100'));
-        expect(await erc20Facet.balanceOf(user2.address)).to.equal(approveAmount.add(parseEther('100')));
+        await adminFacet.connect(owner).grantRole(dummyRole, user3.address);
+        expect(await adminFacet.hasRole(dummyRole, user3.address)).to.be.true;        
+    
+        // Example: Grant a role to an address
+        await adminFacet.connect(owner).grantRole(DEFAULT_ADMIN_ROLE, user1.address);
+        expect(await adminFacet.hasRole(DEFAULT_ADMIN_ROLE, user1.address)).to.be.true;
+
+        // Revoke the role from the address
+        await adminFacet.connect(owner).revokeRole(dummyRole, user1.address);
+        expect(await adminFacet.hasRole(dummyRole, user1.address)).to.be.true;
+
+        await adminFacet.connect(owner).revokeRole(DEFAULT_ADMIN_ROLE, user1.address);
+        expect(await adminFacet.hasRole(DEFAULT_ADMIN_ROLE, user1.address)).to.be.false;   
+        
+        expect(await adminFacet.hasRole(dummyRole, user1.address)).to.be.false;        
     });
 
     mocha.step("Removing the diamondCut function for further immutability", async function () {

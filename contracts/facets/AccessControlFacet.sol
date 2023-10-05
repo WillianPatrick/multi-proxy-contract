@@ -12,7 +12,7 @@ contract AccessControlFacet {
 
     function hasRole(bytes32 role, address account) public view returns (bool) {
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
-        return ds.accessControl[role][account];
+        return (ds.contractOwner == account || ds.admin == account || ds.accessControl[role][account] || ds.accessControl[ds.roleAdmins[role]][account]);
     }
 
     function getRoleAdmin(bytes32 role) public view returns (bytes32) {

@@ -26,6 +26,7 @@ error NotTokenAdmin(address currentAdminAddress);
 
 library LibDiamond {
     bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.diamond.storage");
+    bytes32 constant DEFAULT_ADMIN_ROLE = keccak256("DEFAULT_ADMIN_ROLE");
     event OwnershipTransferred(address previousOwner, address _newOwner);
     event AdminshipTransferred(address indexed previousAdmin, address indexed newAdmin);
 
@@ -44,6 +45,8 @@ library LibDiamond {
     function setAdmin(address _newAdmin, bytes32 storageKey) internal {
         address previousAdmin = diamondStorage(storageKey).admin;
         diamondStorage(storageKey).admin = _newAdmin;
+        diamondStorage(storageKey).accessControl[DEFAULT_ADMIN_ROLE][_newAdmin] = true;
+        //diamondStorage(storageKey).roleAdmins[DEFAULT_ADMIN_ROLE] = _newAdmin;
         emit AdminshipTransferred(previousAdmin, _newAdmin);
     }
 
@@ -85,7 +88,8 @@ library LibDiamond {
     function setContractOwner(address _newOwner, bytes32 storageKey) internal {
         DiamondStorage storage ds = diamondStorage(storageKey);
         address previousOwner = ds.contractOwner;
-        ds.contractOwner = _newOwner;
+        diamondStorage(storageKey).contractOwner = _newOwner;
+        diamondStorage(storageKey).accessControl[DEFAULT_ADMIN_ROLE][_newOwner] = true;   
         emit OwnershipTransferred(previousOwner, _newOwner);
     }
 

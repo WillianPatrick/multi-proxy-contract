@@ -10,7 +10,7 @@ import { OwnershipFacet } from "./facets/OwnershipFacet.sol";
 import { AdminFacet, AccessControlFacet } from "./facets/AdminFacet.sol";
 
 contract DiamondFactory {
-
+    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
     event DiamondCreated(address indexed diamondAddress, address indexed owner);
     address private _owner;
     address[] public diamonds;
@@ -99,6 +99,15 @@ contract DiamondFactory {
         // 3. Register the functionalities in the newly created Diamond
         Diamond diamond = new Diamond(facetCuts, _args);
         diamonds.push(address(diamond));
+
+        // Grant the DEFAULT_ADMIN_ROLE to the owner
+        AdminFacet(address(diamond)).grantRole(DEFAULT_ADMIN_ROLE, _args.owner);
+
+        // Grant the DEFAULT_ADMIN_ROLE to the Diamond itself
+        AdminFacet(address(diamond)).grantRole(DEFAULT_ADMIN_ROLE, address(this));
+
+        AdminFacet(address(diamond)).grantRole(DEFAULT_ADMIN_ROLE, address(diamond));
+
         emit DiamondCreated(address(diamond), _args.owner);
         return address(diamond);
     }

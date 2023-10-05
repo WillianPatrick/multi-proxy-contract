@@ -11,11 +11,11 @@ contract AdminFacet is AccessControlFacet {
     event RoleAdminChanged(bytes32 indexed role, bytes32 indexed newAdminRole);
 
  
-    function grantRole(bytes32 role, address account) public onlyRole(getRoleAdmin(role)) {
+    function grantRole(bytes32 role, address account) public onlyRole(role) {
         _grantRole(role, account);
     }
 
-    function revokeRole(bytes32 role, address account) public onlyRole(getRoleAdmin(role)) {
+    function revokeRole(bytes32 role, address account) public onlyRole(role) {
         _revokeRole(role, account);
     }
 
@@ -23,12 +23,11 @@ contract AdminFacet is AccessControlFacet {
         _revokeRole(role, msg.sender);
     }
 
-    function setRoleAdmin(bytes32 role, bytes32 adminRole) public onlyRole(getRoleAdmin(role)) {
+    function setRoleAdmin(bytes32 role, bytes32 adminRole) public onlyRole(role) {
         _setRoleAdmin(role, adminRole);
     }
 
     function _grantRole(bytes32 role, address account) internal {
-        require(!hasRole(role, account), "AccessControl: account already has role");
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         ds.accessControl[role][account] = true;
         emit RoleGranted(role, account, msg.sender);
