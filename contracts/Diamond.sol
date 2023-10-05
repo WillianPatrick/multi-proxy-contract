@@ -10,9 +10,11 @@ struct DiamondArgs {
     address owner;
     address init;
     bytes initCalldata;
+    //bytes32 storageKey; // Added this for dynamic storage    
 }
 
 contract Diamond {    
+
 
     constructor(IDiamondCut.FacetCut[] memory _diamondCut, DiamondArgs memory _args) payable {
         LibDiamond.setContractOwner(_args.owner);
@@ -30,7 +32,6 @@ contract Diamond {
         assembly {
             ds.slot := position
         }
-        // get facet from function selector
         address facet = ds.facetAddressAndSelectorPosition[msg.sig].facetAddress;
         if(facet == address(0)) {
             revert FunctionNotFound(msg.sig);

@@ -5,6 +5,7 @@ import { IDiamond } from "./IDiamond.sol";
 
 interface IDiamondCut is IDiamond {    
 
+
     /// @notice Add/replace/remove any number of functions and optionally execute
     ///         a function with delegatecall
     /// @param _diamondCut Contains the facet addresses and function selectors
@@ -15,5 +16,5 @@ interface IDiamondCut is IDiamond {
         FacetCut[] calldata _diamondCut,
         address _init,
         bytes calldata _calldata
-    ) external;    
+    ) external;        
 }

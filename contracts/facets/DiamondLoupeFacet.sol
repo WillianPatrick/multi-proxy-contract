@@ -8,6 +8,8 @@ import { LibDiamond } from  "../libraries/LibDiamond.sol";
 import { IDiamondLoupe } from "../interfaces/IDiamondLoupe.sol";
 
 contract DiamondLoupeFacet is IDiamondLoupe {
+    
+
     // Diamond Loupe Functions
     ////////////////////////////////////////////////////////////////////
     /// These functions are expected to be called frequently by tools.

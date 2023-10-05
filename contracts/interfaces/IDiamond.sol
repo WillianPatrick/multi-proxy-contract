@@ -12,4 +12,5 @@ interface IDiamond {
     }
 
     event DiamondCut(FacetCut[] _diamondCut, address _init, bytes _calldata);
+
 }

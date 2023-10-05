@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import * as mocha from "mocha-steps";
 import { parseEther } from '@ethersproject/units';
 import { DiamondInit, DiamondCutFacet, DiamondLoupeFacet,
-     OwnershipFacet, ERC20ConstantsFacet, BalancesFacet,
+     OwnershipFacet, ERC20ConstantsFacet, ERC20Facet, BalancesFacet,
      AllowancesFacet, SupplyRegulatorFacet } from '../typechain-types';
 import { assert } from 'chai';
 import { getSelectors } from "../scripts/libraries/diamond";
@@ -14,6 +14,7 @@ describe("Diamond Global Test", async () => {
     let diamondLoupeFacet: DiamondLoupeFacet;
     let ownershipFacet: OwnershipFacet;
     let constantsFacet: ERC20ConstantsFacet;
+    let erc20Facet: ERC20Facet;
     let balancesFacet: BalancesFacet;
     let allowancesFacet: AllowancesFacet;
     let supplyRegulatorFacet: SupplyRegulatorFacet;
@@ -33,11 +34,11 @@ describe("Diamond Global Test", async () => {
     let owner: SignerWithAddress, admin: SignerWithAddress, 
     user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress;
 
-    const totalSupply = parseEther('2500000');
-    const transferAmount = parseEther('1000');
-    const name = "Token Name";
-    const symbol = "SYMBOL";
-    const decimals = 18;
+    let totalSupply = parseEther('2500000');
+    let transferAmount = parseEther('1000');
+    let name = "Token Name";
+    let symbol = "SYMBOL";
+    let decimals = 18;
 
     beforeEach(async () => {
         [owner, admin, user1, user2, user3] = await ethers.getSigners();
@@ -272,6 +273,65 @@ describe("Diamond Global Test", async () => {
         expect(await balancesFacet.totalSupply()).to.be.equal(totalSupply.add(mintAmount).sub(burnAmount));
     });
 
+    totalSupply = parseEther('2500000');
+    transferAmount = parseEther('1000');
+    name = "Token Name 2";
+    symbol = "SYMBOL2";
+    decimals = 18;
+
+    mocha.step("Deploy the ERC20Facet contract", async function() {
+        const ERC20FacetFactory = await ethers.getContractFactory("ERC20Facet");
+        erc20Facet = await ERC20FacetFactory.deploy(name, symbol, totalSupply, decimals);
+        await erc20Facet.deployed();
+        facetToAddressImplementation['ERC20Facet'] = erc20Facet.address;
+        console.log("       > ERC20Facet - " + erc20Facet.address);
+    });
+    
+    mocha.step("Extract and Register ERC20Facet's public and external functions", async function() {
+        if (!erc20Facet) throw new Error("ERC20Facet not initialized");
+        const facetCutForERC20 = [{
+            facetAddress: erc20Facet.address,
+            action: FacetCutAction.Add,
+            functionSelectors: getSelectors(erc20Facet)
+        }];
+        console.log(facetCutForERC20);
+
+        await diamondCutFacet.connect(owner).diamondCut(facetCutForERC20, ethers.constants.AddressZero, "0x00");
+        console.log("       > Registered ERC20Facet functions");
+    });
+
+    mocha.step("Testing ERC20Facet's functionalities", async function() {
+
+        erc20Facet = await ethers.getContractAt('ERC20Facet', addressDiamond);
+        // Testing balance
+        expect(await erc20Facet.balanceOf(admin.address)).to.be.equal(totalSupply);
+        //expect(await erc20Facet.balanceOf(admin.address)).to.be.equal(parseEther('totalSupply'));
+    
+        // Testing transfer functionality
+        await erc20Facet.connect(admin).transfer(user1.address, transferAmount);
+        expect(await erc20Facet.balanceOf(admin.address)).to.equal(totalSupply.sub(transferAmount));
+        expect(await erc20Facet.balanceOf(user1.address)).to.equal(transferAmount);
+    
+        // Testing approve and allowance
+        const approveAmount = parseEther('500');
+        await erc20Facet.connect(user1).approve(user2.address, approveAmount);
+        expect(await erc20Facet.allowance(user1.address, user2.address)).to.equal(approveAmount);
+    
+        // Testing transferFrom
+        await erc20Facet.connect(user2).transferFrom(user1.address, user2.address, approveAmount);
+        expect(await erc20Facet.balanceOf(user1.address)).to.equal(transferAmount.sub(approveAmount));
+        expect(await erc20Facet.balanceOf(user2.address)).to.equal(approveAmount);
+    
+        // Testing pause functionality
+        await erc20Facet.pause();
+        await expect(erc20Facet.connect(user1).transfer(user2.address, parseEther('100'))).to.be.revertedWith("ERC20Pausable: token transfer while paused");
+        
+        // Testing unpause functionality
+        await erc20Facet.unpause();
+        await erc20Facet.connect(user1).transfer(user2.address, parseEther('100'));
+        expect(await erc20Facet.balanceOf(user2.address)).to.equal(approveAmount.add(parseEther('100')));
+    });
+
     mocha.step("Removing the diamondCut function for further immutability", async function () {
         const facetCuts = [{
             facetAddress: ethers.constants.AddressZero,
@@ -280,4 +340,5 @@ describe("Diamond Global Test", async () => {
         }];
         await diamondCutFacet.connect(owner).diamondCut(facetCuts, ethers.constants.AddressZero, "0x00");
     });
+        
 });
